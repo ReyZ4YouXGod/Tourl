@@ -8,10 +8,20 @@ export const config = {
 
 export default async function handler(req, res) {
   try {
+
     res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+      return res.status(200).end();
+    }
 
     if (req.method !== "POST") {
-      return res.status(405).json({ error: "POST only" });
+      return res.status(405).json({
+        status: false,
+        message: "POST only"
+      });
     }
 
     const chunks = [];
@@ -23,7 +33,10 @@ export default async function handler(req, res) {
     const buffer = Buffer.concat(chunks);
 
     if (!buffer.length) {
-      return res.status(400).json({ error: "no file" });
+      return res.status(400).json({
+        status: false,
+        message: "No file uploaded"
+      });
     }
 
     const filename = "file-" + Date.now();
@@ -39,7 +52,7 @@ export default async function handler(req, res) {
 
   } catch (err) {
     return res.status(500).json({
-      error: "upload failed",
+      status: false,
       message: err.message
     });
   }
