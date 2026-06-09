@@ -9,20 +9,28 @@ export const config = {
 // CONFIG GITHUB
 const TOKEN = process.env.GITHUB_TOKEN;
 const OWNER = "ReyZ4YouXGod";
-const REPO = "data";
+const REPO = "Upload";
 const BRANCH = "main";
 
 export default async function handler(req, res) {
 
-  // biar bisa dipakai dari web lain
+  // CORS (biar bisa dipakai dari mana saja)
   res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      status: false,
+      message: "Use POST method"
+    });
+  }
 
   try {
-
-    if(req.method !== "POST"){
-      return res.status(405).json({ error:"only POST" });
-    }
-
     const chunks = [];
 
     for await (const chunk of req) {
@@ -31,49 +39,56 @@ export default async function handler(req, res) {
 
     const buffer = Buffer.concat(chunks);
 
-    if(!buffer.length){
-      return res.status(400).json({ error:"no file" });
+    if (!buffer.length) {
+      return res.status(400).json({
+        status: false,
+        message: "No file uploaded"
+      });
     }
 
     const filename = "file-" + Date.now();
     const base64 = buffer.toString("base64");
 
-    const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/assets/${filename}`;
+    const githubAPI = `https://api.github.com/repos/${OWNER}/${REPO}/contents/assets/${filename}`;
 
-    const github = await fetch(url, {
-      method:"PUT",
-      headers:{
-        Authorization:`Bearer ${TOKEN}`,
-        "Content-Type":"application/json",
-        "User-Agent":"vercel-api"
+    const githubRes = await fetch(githubAPI, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        "Content-Type": "application/json",
+        "User-Agent": "vercel-upload-api"
       },
       body: JSON.stringify({
-        message:"upload file",
+        message: "upload via api",
         content: base64,
         branch: BRANCH
       })
     });
 
-    const data = await github.json();
+    const githubData = await githubRes.json();
 
-    if(!github.ok){
+    if (!githubRes.ok) {
       return res.status(500).json({
-        error:"github error",
-        detail:data
+        status: false,
+        message: "GitHub upload failed",
+        detail: githubData
       });
     }
 
-    const raw = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/assets/${filename}`;
+    const rawUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/assets/${filename}`;
 
-    res.json({
-      raw,
-      github: data.content?.html_url
+    return res.status(200).json({
+      status: true,
+      filename,
+      raw: rawUrl,
+      github: githubData.content?.html_url
     });
 
-  } catch(err){
-    res.status(500).json({
-      error:"server error",
-      message:err.message
+  } catch (err) {
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
+      error: err.message
     });
   }
 }
