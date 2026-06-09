@@ -5,7 +5,7 @@ export const config = {
 };
 
 const OWNER = "ReyZ4YouXGod";
-const REPO = "Arsip";
+const REPO = "Tourl";
 const BRANCH = "main";
 
 export default async function handler(req, res) {
