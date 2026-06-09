@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // ambil raw buffer
+    // ambil buffer
     const chunks = [];
     for await (const chunk of req) {
       chunks.push(chunk);
@@ -39,12 +39,10 @@ export default async function handler(req, res) {
       });
     }
 
-    // MIME TYPE
+    // detect content type
     const contentType = req.headers["content-type"] || "";
 
-    // DETECT EXTENSION
     let ext = "bin";
-
     if (contentType.includes("image/jpeg")) ext = "jpg";
     else if (contentType.includes("image/png")) ext = "png";
     else if (contentType.includes("image/webp")) ext = "webp";
@@ -52,7 +50,7 @@ export default async function handler(req, res) {
     else if (contentType.includes("audio/mpeg")) ext = "mp3";
     else if (contentType.includes("application/pdf")) ext = "pdf";
 
-    // filename sudah pakai extension
+    // filename pakai extension biar rapi
     const filename = `file-${Date.now()}.${ext}`;
 
     // upload ke vercel blob
@@ -69,7 +67,7 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({
       status: false,
-      message: err.message
+      message: err.message || "server error"
     });
   }
 }
