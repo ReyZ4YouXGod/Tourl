@@ -8,7 +8,7 @@ export const config = {
 
 export default async function handler(req, res) {
   try {
-
+    // CORS
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -24,8 +24,8 @@ export default async function handler(req, res) {
       });
     }
 
+    // ambil raw buffer
     const chunks = [];
-
     for await (const chunk of req) {
       chunks.push(chunk);
     }
@@ -39,10 +39,26 @@ export default async function handler(req, res) {
       });
     }
 
-    const filename = "file-" + Date.now();
+    // MIME TYPE
+    const contentType = req.headers["content-type"] || "";
 
+    // DETECT EXTENSION
+    let ext = "bin";
+
+    if (contentType.includes("image/jpeg")) ext = "jpg";
+    else if (contentType.includes("image/png")) ext = "png";
+    else if (contentType.includes("image/webp")) ext = "webp";
+    else if (contentType.includes("video/mp4")) ext = "mp4";
+    else if (contentType.includes("audio/mpeg")) ext = "mp3";
+    else if (contentType.includes("application/pdf")) ext = "pdf";
+
+    // filename sudah pakai extension
+    const filename = `file-${Date.now()}.${ext}`;
+
+    // upload ke vercel blob
     const blob = await put(filename, buffer, {
-      access: "public"
+      access: "public",
+      contentType
     });
 
     return res.status(200).json({
